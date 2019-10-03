@@ -364,24 +364,16 @@ ivec3 QuadStackView::init() {
 	_gl->glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	_gl->glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-
 	bufferSize = sizeof(ivec2)* mmPointers.size();
 	_gl->glBindBuffer(GL_SHADER_STORAGE_BUFFER, pointersSSBO);
 	_gl->glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, mmPointers.data(), GL_STATIC_DRAW);
 	_gl->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, pointersSSBO);
 
 	_gl->glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-	std::cout << "Mip map levels: " << maxMipmap << std::endl;
-	std::cout << "Tree nodes: " << nodeBounds.size() << std::endl;
-
 	_gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	//_shaderProgram->setUniform("spp", 8);
 	_shaderProgram->setUniform("maxStacks", _quadstack->getTerrain()->getMaxStack());
-	_shaderProgram->setUniform("treeLevels", _quadstack->treeHeight());
 	_shaderProgram->setUniform("mipmapLevels", maxMipmap);
-	_shaderProgram->setUniform("root", root);
 	_shaderProgram->setUniform("unknownIndex", UNKNOWN_INDEX);
 	_shaderProgram->setUniform("numberColors", NUMBER_OF_COLORS);
 	_shaderProgram->setUniform("maxLevels", levels);
@@ -394,10 +386,6 @@ ivec3 QuadStackView::init() {
 	_shaderProgram->setUniform("worldMinHeight", worldMinHeight);
 	_shaderProgram->setUniform("worldMaxHeight", worldMaxHeight);
 	_shaderProgram->setUniform("blockDim", ivec2(blockSizeX, blockSizeY));
-
-	_shaderProgram->setUniform("clippingMode", false);
-	_shaderProgram->setUniform("boreholeMode", false);
-	_shaderProgram->setUniform("crossPlane", vec4(-1.0, 0.0, 0.0, -0.20));
 
 	// Set up the subroutine indexes
 	_raycastingPass = _gl->glGetSubroutineIndex(programHandle, GL_FRAGMENT_SHADER, "raycastingPass");

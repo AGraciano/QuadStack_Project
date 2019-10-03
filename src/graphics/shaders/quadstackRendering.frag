@@ -1,3 +1,8 @@
+/*
+GPU implementation of a rendering algotithm for QuadStack. The algorithm traverse the tree structure and performs a empty space skipping if needed.
+The algorithm carries out a real-time decoding/decompressing both of attribute and height values
+*/
+
 #version 450 core
 
 layout( location = 0 ) out vec4 fragColor;
@@ -70,8 +75,6 @@ const vec3 XAXIS = vec3(1,0,0);
 const vec3 YAXIS = vec3(0,1,0);
 const vec3 ZAXIS = vec3(0,0,1);
 
-bool DOWNWARDS;
-
 // structs
 struct RayContext {
 	vec3 position;
@@ -87,12 +90,10 @@ struct LevelStack{
 	ivec2 maxC;
 	vec2 minB;
 	vec2 maxB;
-	//vec2 height;
 	ivec3 lowerInterval;
 	ivec3 upperInterval;
 };
 
-uniform int spp;
 // Parameter uniforms
 uniform vec3 cameraPosition;
 uniform vec3 stepSize;
@@ -101,10 +102,8 @@ uniform vec3 minBB;
 uniform vec3 maxBB;
 
 // QuadStack parameters
-uniform uvec3 root;
 uniform uint totalRows;
 uniform uint totalCols;
-uniform int treeLevels;
 uniform int mipmapLevels;
 uniform float resolution;
 uniform float actualMinHeight;
@@ -114,7 +113,6 @@ uniform float worldMaxHeight;
 uniform ivec2 blockDim;
 
 // Texture uniforms
-uniform int mipmapIndex[MAX_LEVELS];
 uniform sampler1D colors;
 uniform usamplerBuffer tree;
 uniform isamplerBuffer lut;
@@ -138,11 +136,6 @@ uniform uint maxStacks;
 uniform vec3 ambientColor;
 uniform vec3 lightPosition;
 
-uniform vec4 crossPlane; // defined in view-space
-uniform bool clippingMode;
-uniform float occlusionDistance;
-uniform bool downwards;
-
 // Proxy geometry normals
 uniform vec3 normals[6];
 
@@ -154,24 +147,14 @@ float opacityThreshold = 0.01;
 
 // Ray marching parameters
 vec3 geomDir = normalize(entryPoint - cameraPosition);
-vec3 epsilonVector = vec3(DELTA, DELTA, DELTA);
 vec3 invDir = 1.0/geomDir;
 vec3 dirStep = geomDir * stepSize;
-vec3 blockStep = geomDir * vec3(xOffset);
-vec3 mipmapStep[4] = vec3[](dirStep, geomDir * mipmapSize * 2, geomDir * mipmapSize * 4, geomDir * mipmapSize * 8);
-const float MAX_STEPS = 100;
-float invTotalRows = 1.0 / float(totalRows);
-float invTotalCols = 1.0 / float(totalCols);
 int mipmap = 0;
-bool firstMatch = true;
 
 vec3 setUpDataPos(vec3 geomDir, out vec3 normal){
 
 	vec3 entry = entryPoint + geomDir * EPSILON;
 	float distanceEntry = distance(entry, cameraPosition);
-
-	if (geomDir.y > 0) // Upwards
-		DOWNWARDS = false;
 
 	return cameraPosition + geomDir * distanceEntry;
 }
@@ -196,22 +179,6 @@ bool inside(vec2 pos, vec2 minPoint, vec2 maxPoint) {
 	return dot(sign(pos - minPoint), sign(maxPoint - pos)) >= 2.0;
 }
 
-float insideBox(vec2 v, vec2 bottomLeft, vec2 topRight) {
-	vec2 s = step(bottomLeft, v) - step(topRight, v);
-	return s.x * s.y;
-}
-
-bool onBounds(vec3 pos, vec3 minPoint, vec3 maxPoint) {
-	bool minP = any(equal(minPoint, pos));
-	bool maxP = any(equal(maxPoint, pos));
-
-	return minP || maxP;
-}
-
-bool insideInclusive(vec3 pos, vec3 minPoint, vec3 maxPoint) {
-	return dot(sign(pos - minPoint), sign(maxPoint - pos)) >= 0.0;
-}
-
 bool insideExclusive(vec3 pos, vec3 minPoint, vec3 maxPoint) {
 	return dot(sign(pos - minPoint), sign(maxPoint - pos)) >= 3.0;
 }
@@ -223,25 +190,6 @@ bool inside(vec3 pos) {
 vec4 transferFunction(uint index) {
 	return texelFetch(colors, int(index % numberColors), 0);
 }
-
-bool earlyTermination(vec3 dataPos) {
-	bool stop = !inside(dataPos);
-	//if (clippingMode)
-	//	stop = stop && sidePlane(dataPos) < 0;
-
-	return stop;
-}
-
-
-ivec2 getTexelFromProjection(vec2 projection, float xOffset, float zOffset, int mipmap) {
-	uint coordX = uint((projection.x - minBB.x) / xOffset); 
-	uint coordY = uint((projection.y - minBB.z) / zOffset);
-	coordX = min(max(0, coordX), (totalRows >> mipmap) - 1);
-	coordY = min(max(0, coordY), (totalCols >> mipmap) - 1);
-
-	return ivec2(coordX, coordY);
-}
-
 
 ivec2 getTexelFromProjectionNoBounds(vec2 projection, float xOffset, float zOffset) {
 	int coordX = int(floor((projection.x - minBB.x) / xOffset)); 
@@ -265,8 +213,6 @@ bool isRenderable(float value, out vec4 color) {
 
 	return alpha > opacityThreshold && !isEqual(value, float(unknownIndex)) && !isEqual(value, float(LOWEST));
 }
-
-
 
 ivec3 getInterval(int intervalIndex) {
 	return intervals[intervalIndex].xyz; 
@@ -404,10 +350,6 @@ float evaluateInterval(int pointer, ivec2 coords, ivec2 minCoords, ivec2 dimensi
 	return sampled; // return max and min values
 }
 
-bool between(float m, float m0, float m1) {
-	return m0 < m && m1 >= m;
-}
-
 bool intersectBox(vec3 orig, vec3 dir, vec3 boxMax, vec3 boxMin, out float tnear, out float tfar) {
 	vec3 tmin = (boxMin - orig) * invDir;
 	vec3 tmax = (boxMax - orig) * invDir;
@@ -420,18 +362,6 @@ bool intersectBox(vec3 orig, vec3 dir, vec3 boxMax, vec3 boxMin, out float tnear
 
 	return (tfar >= tnear) && tfar > 0;
 	//return tfar > 0;
-}
-
-bool insideVec2(vec2 n, vec2 nmin, vec2 nmax) {
-	bvec2 b0 = bvec2(greaterThanEqual(n, nmin));
-	bvec2 b1 = bvec2(lessThan(n, nmax));
-	return all(b0) && all(b1);
-}
-
-bool insideVec3(vec3 n, vec3 nmin, vec3 nmax) {
-	bvec2 b0 = bvec2(greaterThanEqual(n, nmin));
-	bvec2 b1 = bvec2(lessThanEqual(n, nmax));
-	return all(b0) && all(b1);
 }
 
 ivec2 getCoords(vec3 pos) {
@@ -448,55 +378,6 @@ ivec2 getCoordsNoBounds(vec3 pos) {
 	return getTexelFromProjectionNoBounds(vec2(projectedX, projectedZ), xOffset, yOffset);
 }
 
-ivec2 getCoords(vec3 pos, int mipmap) {
-	float projectedX = pos.x; // OpenGL textures are upsidedown 
-	float projectedZ = pos.z;
-	// Project to the indices texture the current position and the next
-	return getTexelFromProjection(vec2(projectedX, projectedZ), xOffset, yOffset, mipmap);
-}
-
-bool insideIvec2(ivec2 n, ivec2 n0, ivec2 n1) {
-	bool bn0 = n0.x <= n.x && n0.y <= n.y;
-	bool bn1 = n1.x > n.x && n1.y > n.y;
-	return bn0 && bn1;
-}
-
-bool insideIvec2(ivec2 n) {
-	bool bn0 = n.x >= 0 && n.y >= 0;
-	bool bn1 = n.x < totalRows && n.y < totalCols;
-	return bn0 && bn1;
-}
-
-float rayBoxIntersect ( vec3 rpos, vec3 rdir, vec3 vmin, vec3 vmax ) {
-   float t[10];
-   t[1] = (vmin.x - rpos.x) * invDir.x;
-   t[2] = (vmax.x - rpos.x) * invDir.x;
-   t[3] = (vmin.y - rpos.y) * invDir.y;
-   t[4] = (vmax.y - rpos.y) * invDir.y;
-   t[5] = (vmin.z - rpos.z) * invDir.z;
-   t[6] = (vmax.z - rpos.z) * invDir.z;
-   t[7] = max(max(min(t[1], t[2]), min(t[3], t[4])), min(t[5], t[6]));
-   t[8] = min(min(max(t[1], t[2]), max(t[3], t[4])), max(t[5], t[6]));
-   t[9] = (t[8] < 0 || t[7] > t[8]) ? -1 : t[7];
-   return t[9];
-}
-
-bool isLeaf(uvec4 node) {
-	return node.z == 0; 
-}
-
-bool hasData(ivec2 minB, ivec2 maxB) {
-	return maxB.x > minB.x && maxB.y > minB.y;
-}
-
-bool hasData(vec2 minB, vec2 maxB) {
-	return maxB.x > minB.x && maxB.y > minB.y;
-}
-
-bool minLOD(vec2 sampled, int mipmap) {
-	return isEqual(sampled[MIN], sampled[MAX]) || mipmap == 0;
-}
-
 vec4 getQuadrant(ivec2 coords, ivec2 minCoords, ivec2 maxCoords, vec2 minBounds, vec2 maxBounds, int factor) {
 	int rows = maxCoords.x - minCoords.x;
 	int cols = maxCoords.y - minCoords.y;
@@ -507,40 +388,6 @@ vec4 getQuadrant(ivec2 coords, ivec2 minCoords, ivec2 maxCoords, vec2 minBounds,
 	vec2 spacing = vec2(maxBounds - minBounds) / vec2(dimensions);
 
 	vec2 retMin = minBounds + vec2(indices) * spacing;
-	vec2 retMax = retMin + spacing;
-
-	return vec4(retMin, retMax);
-}
-
-vec4 getQuadrant(vec2 pos, vec2 minBounds, vec2 maxBounds, int factor) {
-	vec2 dimensions = vec2(totalRows >> factor, totalCols >> factor);
-	vec2 spacing = (maxBounds - minBounds) / dimensions;
-	vec2 indices = (pos - minBounds) / spacing;
-
-	vec2 retMin = minBounds + ivec2(indices) * spacing;
-	vec2 retMax = retMin + spacing;
-
-	return vec4(retMin, retMax);
-}
-
-void getQuadrant(vec2 pos, int factor, out vec4 bounds, out ivec4 coords) {
-	vec2 dimensions = vec2(totalRows >> factor, totalCols >> factor);
-	vec2 spacing = (maxBB.xz - minBB.xy) / dimensions;
-	vec2 indices = (pos - minBB.xy) / spacing;
-
-	vec2 retMin = minBB.xy + ivec2(indices) * spacing;
-	vec2 retMax = retMin + spacing;
-
-	bounds = vec4(retMin, retMax);
-	coords = ivec4(indices, indices + dimensions);
-}
-
-vec4 getQuadrant(vec2 pos, int factor) {
-	vec2 dimensions = vec2(totalRows >> factor, totalCols >> factor);
-	vec2 spacing = (maxBB.xz - minBB.xy) / dimensions;
-	vec2 indices = (pos - minBB.xy) / spacing;
-
-	vec2 retMin = minBB.xy + ivec2(indices) * spacing;
 	vec2 retMax = retMin + spacing;
 
 	return vec4(retMin, retMax);
@@ -741,16 +588,12 @@ int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, 
 			vec4 newColor;
 			bool isChild = int(interval[VALUE]) == UNKNOWN;
 			bool isRender = isRenderable(int(interval[VALUE]), newColor);
-
-
-
+			
 			if (isChild) {
 				outUpperInterval = interval;
 				return CHILDREN;
 			}
-
-
-
+			
 			// Equation for acumulation. For now, just sample the TF
 			if (isRender) {
 				color = newColor;
@@ -758,10 +601,11 @@ int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, 
 				return EVALUATED;
 			}  
 			
+			// Empty space skipping
 			collisions++;
 			float lastHeight;
 				
-			if (i == 0 && lowerInterval[VALUE] == FIRST_LEVEL )
+			if (i == 0 && lowerInterval[VALUE] == FIRST_LEVEL)
 				lastHeight = minBB.y;
 			else
 				lastHeight = sampleIntervalMax(stack, outPos, outLowerInterval, mipmap);
@@ -770,36 +614,28 @@ int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, 
 
 			vec4 bounds = getQuadrant(coords, nodeCoords.xy, nodeCoords.zw, nodeBounds.xy, nodeBounds.zw, mipmap);
 			if (outPos.y >= lastHeight && outPos.y <= nextHeight) {
-
 				vec4 newPos = castRayInterval(outPos, bounds, lastHeight, nextHeight);
 				outPos = newPos.xyz;
 				fatherUpper = sampleIntervalMax(stack, outPos, upperInterval, 0);
-
 				coords = getCoordsNoBounds(outPos);
 
 			} else {
-
 				if (mipmap == minimumMipmap) {
 					i = 0;
 					outLowerInterval = lowerInterval;
 					mipmap = maxMipmap;
-
 				} else {
 					mipmap = max(mipmap - 1, minimumMipmap);
 				}
-
 			}
-
-				
+							
 			if (!isInNode(outPos, nodeBounds, lowerInterval, upperInterval, stack))
 				return OUT;
 			
-
 		} else {
 			i++;
 			outLowerInterval = interval;
 			lastSample = mipSampling;	
-			
 		} 
 
 	}
@@ -841,14 +677,12 @@ vec4 traverseQuadStack(vec3 position, out vec3 outPosition) {
 	for(int i=0; i < MAX_SAMPLES; ++i) {
 		cont++;
 		collisions++;
-		//node = texelFetch(tree, int(sl[stackIndex].index));
 		node.xyz = nodes[sl[stackIndex].index].xyz;
 
 		ivec3 outLower;
 		ivec3 outUpper;
 		int state = evaluateNode(collisions, sl, stackIndex, node.xy, outPosition, max(maxMipmap - stackIndex, 0), color, outLower, outUpper, outPosition, color);
 
-		
 		if (!inside(outPosition) || (state == EVALUATED && color.a >= 0.9) || state == DEBUG )
 			return color;
 		
@@ -861,10 +695,7 @@ vec4 traverseQuadStack(vec3 position, out vec3 outPosition) {
 				ivec3 upper = sl[stackIndex].upperInterval;
 				ins = isInNode(outPosition, bounds, lower, upper, sl);
 			} while(stackIndex > 0 && !ins);
-			//stackIndex = 0;
 			continue;
-
-
 		} 
 
 		// Calculate coordinates
@@ -875,8 +706,7 @@ vec4 traverseQuadStack(vec3 position, out vec3 outPosition) {
 		int child;
 
 		nextLevel(outPosition.xz, currentCoords, currentBounds, nextCoords, nextBounds, child);
-
-		
+				
 		stackIndex++;
 		sl[stackIndex].index = node.z + child;
 		sl[stackIndex].minC = nextCoords.xy;

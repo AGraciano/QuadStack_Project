@@ -51,32 +51,12 @@ bool QuadStack::Node::lastStack() {
 }
 
 bool QuadStack::Node::divisible() {
-	//return (_bb.max.x - _bb.min.x) >= 2 && (_bb.max.y - _bb.min.y) >= 2 && _level > 0;
 	return (_bb.max.x - _bb.min.x) > 0 && (_bb.max.y - _bb.min.y) > 0;
 }
 
 
 bool QuadStack::Node::isLeaf() const {
 	return _nw == nullptr;
-}
-
-unsigned QuadStack::Node::numberOfStacks() {
-	unsigned size = 0;
-
-	if (_compressed)
-		size++;
-
-	/*if (isLeaf()) {
-	if (!_compressed)
-	size += (_bb.max.x - _bb.min.x) * (_bb.max.y - _bb.min.y);
-	} else*/ if (!isLeaf()) {
-		size += _nw->numberOfStacks();
-		size += _ne->numberOfStacks();
-		size += _sw->numberOfStacks();
-		size += _se->numberOfStacks();
-	}
-
-	return size;
 }
 
 int QuadStack::Node::treeHeight() {
@@ -94,8 +74,7 @@ int QuadStack::Node::treeHeight() {
 
 
 unsigned QuadStack::Node::getMinLevel() {
-
-	if (isLeaf())
+		if (isLeaf())
 		return _level;
 	else {
 
@@ -146,7 +125,6 @@ bool QuadStack::Node::compress() {
 	// Check if every stack is equal to the first one
 	for (int x = _bb.min.x; x < _bb.max.x; ++x) {
 		for (int y = _bb.min.y; y < _bb.max.y; ++y) {
-			//if (!(x == _bb.min.x && y == _bb.min.y)) { // We skip the first stack since it were already loaded
 			unsigned relativeX = x - _bb.min.x;
 			unsigned relativeY = y - _bb.min.y;
 			Stack<short>& nextStack = _terrain->getStack(x, y);
@@ -163,7 +141,6 @@ bool QuadStack::Node::compress() {
 			int i = 0;
 			for (auto interval : nextStack.getIntervals())
 				heights[i++]->setData(interval._accumulatedHeight, relativeX, relativeY);
-			//}
 
 		}
 	}
@@ -194,15 +171,11 @@ bool QuadStack::Node::unify() {
 	dimension.y = _bb.max.y - _bb.min.y;
 	float minHeight = _terrain->getMinHeight();
 	float maxHeight = _terrain->getMaxHeight();
-	float nullData = -999;
+	float nullData = NULL_VALUE;
 
-	if (!divisible()) {
+	if (!divisible())
 		auto heightField = new HeightField(origin, spacing, dimension, minHeight, maxHeight, nullData, nullptr);
-		//heightField->setData(maxHeight, 0, 0);
-		//_stack.push_back(Interval(NULL_VALUE, heightField));
-		//return false;
-	}
-
+	
 	auto& reference = _terrain->getStack(_bb.min.x, _bb.min.y);
 
 	unsigned stackSize = reference.getIntervals().size();
@@ -210,7 +183,6 @@ bool QuadStack::Node::unify() {
 
 	for (int i = 0; i < stackSize; ++i)
 		heightFields[i] = new HeightField(origin, spacing, dimension, minHeight, maxHeight, nullData, nullptr);
-
 
 	for (int x = _bb.min.x; x < _bb.max.x; ++x) {
 		for (int y = _bb.min.y; y < _bb.max.y; ++y) {
@@ -270,9 +242,7 @@ QuadStack::GStack QuadStack::Node::compact(Interval *s1, Interval *s2, Interval 
 
 		Interval aux1, aux2;
 		GStack r1;
-		//bool b1 = false;
-		//bool b2 = false;
-
+		
 		if (equalB1 && equalB2 && equalB3 && equalE1 && equalE2 && equalE3 && lengthE2) {
 			aux1 = Interval(s1->getMaterial(), nullptr);
 			aux2 = Interval(s1[l[0] - 1].getMaterial(), nullptr);
@@ -372,7 +342,6 @@ QuadStack::GStack QuadStack::Node::shrink(GStack &newStack, HeightField::Quadran
 
 			newCheck = newIndex;
 			newIndex = std::min(newIndex + 1, static_cast<int>(newSize - 1));
-			//selfIndex++;
 			selfCheck = ++selfIndex;
 
 			aux.push_back(&iSelf);
@@ -384,12 +353,10 @@ QuadStack::GStack QuadStack::Node::shrink(GStack &newStack, HeightField::Quadran
 			newIndex++;
 			selfIndex++;
 		} else {
-			//aux.push_back(_stack[selfIndex]);
-
+			
 			selfIndex = selfCheck;
 			newIndex = newCheck;
 		}
-		//aux.push_back(&iSelf);
 
 	}
 
@@ -399,9 +366,8 @@ QuadStack::GStack QuadStack::Node::shrink(GStack &newStack, HeightField::Quadran
 		_stack.clear();
 		_stack.push_back(last);
 	} else {
-		//_stack = aux;
 		GStack retStack;
-		//_stack.clear();
+		
 		for (auto interval : aux)
 			retStack.push_back(*interval);
 
@@ -421,57 +387,18 @@ void QuadStack::Node::promote() {
 		if (!_se->isLeaf())
 			_se->promote();
 
-
 		auto nw = _nw;
 		auto ne = _ne;
 		auto sw = _sw;
 		auto se = _se;
 
-
 		Interval *c1, *c2, *c3, *c4;
 		int lengths[4];
-
-		//GStack saveNe;
-		//GStack saveSw;
-		//GStack saveSe;
-		//if (ne->noCompression()) {
-		//	ne->_stack.clear();
-		//	for (auto& interval : nw->_stack)
-		//		ne->_stack.push_back(Interval(interval.getMaterial(), nullptr));
-		//}
-		//if (sw->noCompression()) {
-		//	sw->_stack.clear();
-		//	for (auto& interval : nw->_stack)
-		//		sw->_stack.push_back(Interval(interval.getMaterial(), nullptr));
-		//}
-		//if (se->noCompression()) {
-		//	se->_stack.clear();
-		//	for (auto& interval : nw->_stack)
-		//		se->_stack.push_back(Interval(interval.getMaterial(), nullptr));
-		//}
 
 		unsigned nwLength = nw->gstackSize();
 		unsigned neLength = ne->gstackSize();
 		unsigned swLength = sw->gstackSize();
 		unsigned seLength = se->gstackSize();
-
-		//if (ne->noCompression()) {
-		//	ne->getGStack().clear();
-		//	for (auto interval : nw->getGStack()) {
-		//		Interval i;
-		//		i.setMaterial(interval.getMaterial());
-		//		ne->getGStack().push_back(i);
-		//	}
-		//}
-
-		//if (se->noCompression()) {
-		//	se->getGStack().clear();
-		//	for (auto interval : sw->getGStack()) {
-		//		Interval i;
-		//		i.setMaterial(interval.getMaterial());
-		//		se->getGStack().push_back(i);
-		//	}
-		//}
 
 		c1 = &nw->getGStack()[0];
 		c2 = &ne->getGStack()[0];
@@ -482,39 +409,12 @@ void QuadStack::Node::promote() {
 		lengths[2] = swLength;
 		lengths[3] = seLength;
 
-		//Cachemap cache(lengths[0] + 1, vector<vector<vector<GStack>>>(lengths[1] + 1,
-		//	vector<vector<GStack>>(lengths[2] + 1, vector<GStack>(lengths[3] + 1))));
 		Cachemap cache;
-
-		//for (auto interval : nw->getGStack())
-		//	std::cout << interval.getMaterial() << " ";
-		//std::cout << std::endl;
-		//for (auto interval : ne->getGStack())
-		//	std::cout << interval.getMaterial() << " ";
-		//std::cout << std::endl;
-		//for (auto interval : sw->getGStack())
-		//	std::cout << interval.getMaterial() << " ";
-		//std::cout << std::endl;
-		//for (auto interval : se->getGStack())
-		//	std::cout << interval.getMaterial() << " ";
-		//std::cout << std::endl;
 
 		vector<int> l = { lengths[0], lengths[1], lengths[2], lengths[3] };
 		_stack = compact(c1, c2, c3, c4, l, cache);
 		if (_stack.empty())
 			_stack.push_back(Interval(NULL_VALUE, nullptr));
-
-		//std::cout << "Promote to: ";
-		//for (auto interval : _stack)
-		//	std::cout << interval.getMaterial() << " ";
-		//std::cout << std::endl;
-		//getchar();
-		//if (!saveNe.empty())
-		//	ne->_stack = saveNe;
-		//if (!saveSw.empty())
-		//	se->_stack = saveSw;
-		//if (!saveSe.empty())
-		//	se->_stack = saveSe;
 
 		auto newNw = nw->shrink(_stack, HeightField::Quadrant::NW);
 		auto newNe = ne->shrink(_stack, HeightField::Quadrant::NE);
@@ -546,11 +446,8 @@ void QuadStack::Node::decompose() {
 }
 
 void QuadStack::Node::classify() {
-	//auto start = std::chrono::high_resolution_clock::now();
-
 	_compressed = compress();
-
-
+	
 	if (divisible() && !_compressed) {
 
 		subdivide();
@@ -559,14 +456,7 @@ void QuadStack::Node::classify() {
 		_ne->classify();
 		_sw->classify();
 		_se->classify();
-
-
-
 	}
-	//auto finish = std::chrono::high_resolution_clock::now();
-	//std::cout << "Node in level " << _level << " -> " 
-	//	<< std::chrono::duration_cast<std::chrono::seconds>(finish - start).count()
-	//	<< " seconds\n";
 }
 
 
@@ -676,11 +566,9 @@ void QuadStack::Node::updateTerrain(ShortSBR *terrain) {
 		_sw->updateTerrain(terrain);
 		_se->updateTerrain(terrain);
 	}
-
 }
 
 vec4 QuadStack::Node::memorySize() {
-	//double accumulatedSize = 0;
 	vec4 accumulatedSize = { 0, 0, 0, 0 };
 	if (!noCompression() && _stack.size() > 0) {
 		accumulatedSize.x += sizeof(int)* 2;
@@ -690,11 +578,7 @@ vec4 QuadStack::Node::memorySize() {
 			if (interval.isOwner()) {
 				unsigned xSize = _bb.max.x - _bb.min.x;
 				unsigned ySize = _bb.max.y - _bb.min.y;
-
 				interval.getHeightField()->getHeightResolution();
-
-				//accumulatedSize += sizeof(float)* xSize * ySize;
-				//accumulatedSize += interval.getHeightField()->memorySizeCompressedDelta();
 				accumulatedSize.z += interval.getHeightField()->memorySizeCompressed();
 
 			}
@@ -703,7 +587,6 @@ vec4 QuadStack::Node::memorySize() {
 		}
 
 		if (!isLeaf()) {
-			//accumulatedSize += sizeof(Node*)* 4;
 			accumulatedSize.y += sizeof(Node*);
 
 			accumulatedSize += _nw->memorySize();
@@ -733,21 +616,6 @@ void QuadStack::Node::subdivide() {
 
 	ivec2 minSE(halfX, _bb.min.y);
 	ivec2 maxSE(_bb.max.x, halfY);
-
-	//int halfX = _terrain->getDimensionX() / 2;
-	//int halfY = _terrain->getDimensionY() / 2;
-
-	//ivec2 minNW(0, halfY);
-	//ivec2 maxNW(halfX, _terrain->getDimensionY());
-
-	//ivec2 minNE(halfX, halfY);
-	//ivec2 maxNE(_terrain->getDimensionX(), _terrain->getDimensionY());
-
-	//ivec2 minSW(0, 0);
-	//ivec2 maxSW(halfX, halfY);
-
-	//ivec2 minSE(halfX, 0);
-	//ivec2 maxSE(_terrain->getDimensionX(), halfY);
 
 	_nw = new QuadStack::Node(_level + 1, minNW, maxNW, _terrain);
 	_ne = new QuadStack::Node(_level + 1, minNE, maxNE, _terrain);
@@ -851,18 +719,9 @@ _root(new QuadStack::Node(0, ivec2(0, 0), ivec2(terrain->getDimension().x, terra
 	_maxLevels++;
 }
 
-
-unsigned QuadStack::numberOfStacks() {
-
-	return _root->numberOfStacks();
-}
-
-
 void QuadStack::classify() {
-
 	_root->classify();
 }
-
 
 
 int QuadStack::sample(int x, int y, float height, float fatherHeight) {
@@ -887,7 +746,7 @@ vec4 QuadStack::memorySize() const {
 void QuadStack::compressHeightField() {
 	float resolution = getHeightResolution();
 	
-	unsigned block = 16;
+	unsigned block = 8;
 	Iterator it = iterator();
 	do {
 		auto *node = it.data();
@@ -949,72 +808,6 @@ void QuadStack::topDownPhase() {
 	_root->decompose();
 }
 
-
-void QuadStack::introduceStack(vector<int>& lut, vector<int>& input) {
-	int stackSize = input.size();
-	int lutSize = lut.size();
-	int begginingSize = -1;
-	int endingSize = -1;
-	bool beginning = false;
-	bool ending = false;
-
-	vector<int> stack;
-
-
-	for (int i = 0; i < stackSize; ++i) {
-		stack.push_back(input[i]);
-
-		vector<int>::iterator it;
-		it = std::find_end(lut.begin(), lut.end(), stack.begin(), stack.end());
-
-		if (i == stackSize - 1 && it != lut.end())
-			return;
-
-		if (it == lut.end()) {
-			break;
-		} else {
-
-			if (it == lut.end() - 1 - i)
-				endingSize = i;
-
-		}
-	}
-
-	stack.clear();
-
-	for (int i = stackSize - 1; i >= 0; i--) {
-		stack.insert(stack.begin(), input[i]);
-
-		vector<int>::iterator it;
-		it = std::search(lut.begin(), lut.end(), stack.begin(), stack.end());
-
-		if (it == lut.end()) {
-			break;
-		} else {
-
-			if (it == lut.begin())
-				begginingSize = i;
-
-		}
-	}
-
-	vector<int> returnVector;
-	if (begginingSize == -1 && endingSize == -1) {
-		returnVector.insert(returnVector.begin(), lut.begin(), lut.end());
-		returnVector.insert(returnVector.end(), input.begin(), input.end());
-	} else if (begginingSize != -1 && begginingSize < stackSize - endingSize) {
-		returnVector.insert(returnVector.begin(), input.begin(), input.begin() + begginingSize);
-		returnVector.insert(returnVector.end(), lut.begin(), lut.end());
-	} else {
-		returnVector.insert(returnVector.begin(), lut.begin(), lut.end());
-		returnVector.insert(returnVector.end(), input.begin() + endingSize + 1, input.end());
-	}
-
-	lut = returnVector;
-
-}
-
-
 void QuadStack::bottomUpPhase() {
 	_root->promote();
 }
@@ -1040,7 +833,6 @@ _hfIndex(other._hfIndex) {
 
 
 }
-
 
 QuadStack::Interval& QuadStack::Interval::operator=(const QuadStack::Interval& other) {
 	if (&other != this) {
@@ -1118,56 +910,4 @@ void QuadStack::Interval::merge() {
 			}
 		}
 	}
-}
-
-void QuadStack::Interval::merge(QuadStack::Interval *nw, QuadStack::Interval *ne, QuadStack::Interval *sw, QuadStack::Interval *se) {
-	vec2 origin;
-	origin.x = sw->_heightField->getOriginX();
-	origin.y = sw->_heightField->getOriginY();
-
-	vec2 spacing;
-	spacing.x = nw->_heightField->getResolution();
-	spacing.y = nw->_heightField->getResolution();
-	
-	ivec2 dimension;
-	dimension.x = nw->getDimensionX() + ne->getDimensionX();
-	dimension.y = nw->getDimensionY() + sw->getDimensionY();
-	float minHeight = nw->_heightField->getMinHeight();
-	float maxHeight = nw->_heightField->getMaxHeight();
-	float nullData = nw->_heightField->getNullData();
-
-	_heightField = new HeightField(origin, spacing, dimension, minHeight, maxHeight, nullData, nullptr);
-
-	for (int x = 0; x < nw->getDimensionX(); ++x) {
-		for (int y = 0; y < nw->getDimensionY(); ++y) {
-			float height = nw->_heightField->getData(x, y);
-			_heightField->setData(height, x, sw->getDimensionY() + y);
-		}
-	}
-
-	for (int x = 0; x < ne->getDimensionX(); ++x) {
-		for (int y = 0; y < ne->getDimensionY(); ++y) {
-			float height = ne->_heightField->getData(x, y);
-			_heightField->setData(height, sw->getDimensionX() + x, sw->getDimensionY() + y);
-		}
-	}
-
-	for (int x = 0; x < sw->getDimensionX(); ++x) {
-		for (int y = 0; y < sw->getDimensionY(); ++y) {
-			float height = sw->_heightField->getData(x, y);
-			_heightField->setData(height, x, y);
-		}
-	}
-
-	for (int x = 0; x < se->getDimensionX(); ++x) {
-		for (int y = 0; y < se->getDimensionY(); ++y) {
-			float height = se->_heightField->getData(x, y);
-			_heightField->setData(height, sw->getDimensionX() + x, y);
-		}
-	}
-
-	nw->_heightFieldOwner = false;
-	ne->_heightFieldOwner = false;
-	sw->_heightFieldOwner = false;
-	se->_heightFieldOwner = false;
 }

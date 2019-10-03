@@ -58,19 +58,9 @@ public:
 
 	void render() override;
 	ivec3 init();
-
 	void setViewport(unsigned int width, unsigned int height);
-
-	/**
-	Getter method
-	*/
 	const vec3 getMinBB() { return _minBB; }
-
-	/**
-	Getter method
-	*/
 	const vec3 getMaxBB() { return _maxBB; }
-
 	GLuint getRaycastingPassHandle() const { return _raycastingPass; }
 	GLuint getShadingPassHandle() const { return _shadingPass; }
 

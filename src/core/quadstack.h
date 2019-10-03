@@ -31,7 +31,7 @@ class QuadStack {
 
 			HeightField *_heightField; /*< Layer of consecutive heights with a same material */
 
-			int _hfIndex;
+			int _hfIndex; /*< Index for the heightfield pool */
 
 			bool _heightFieldOwner; /*< Flag that indicates if the height map must be sampled in this interval */
 
@@ -58,10 +58,6 @@ class QuadStack {
 
 			float getHeight(unsigned int col, unsigned int row) const { return _heightField->getData(col, row); }
 
-			ivec2 getHeight(unsigned int col, unsigned int row, unsigned mipmap) const { return _heightField->getData(col, row, mipmap); }
-
-			float sampleHeight() const { return _heightField->getData(0, 0); }
-
 			int getMaterial() const { return _material; }
 
 			void setMaterial(int material) { _material = material; }
@@ -70,23 +66,11 @@ class QuadStack {
 
 			int getHfIndex() { return _hfIndex; }
 
-			void setRelativeCoordinates(glm::vec2 relative) { _relative = relative; }
-
 			void setHeightField(HeightField *HeightField) { _heightFieldOwner = false; _heightField = HeightField; }
-
-			void removeOwnership() { _heightFieldOwner = false; }
-			
-			void setOwnership(bool owner) { _heightFieldOwner = owner; }
-
-			void markAsErasable() { _erase = true; }
-
-			bool isErasable() { return _erase; }
 
 			bool hasHeightField() const { return _heightField != nullptr; }
 
 			HeightField* getHeightField() { return _heightField; }
-
-			void releaseHeightField() { _heightFieldOwner = false; delete _heightField; }
 
 			unsigned int getDimensionX() const { if (hasHeightField()) return _heightField->getDimensionX(); return 0; }
 
@@ -96,15 +80,9 @@ class QuadStack {
 
 			bool isOwner() { return _heightFieldOwner; }
 
-			void merge(Interval *nw, Interval *ne, Interval *sw, Interval *se);
-			
 			void merge();
 
 			void addQuadrant(Interval *subInterval, HeightField::Quadrant quadrant);
-
-			bool hasData() { if (_heightField) return _heightField->getDimensionX() > 0 && _heightField->getDimensionY() > 0; return false; }
-
-			bool hasQuadrant(HeightField::Quadrant quadrant) { return _quadrants.find(quadrant) != _quadrants.end(); }
 
 			~Interval() {}
 		};
@@ -155,8 +133,6 @@ class QuadStack {
 
 			vec4 memorySize();
 
-			Stack<short>& getHeightStack(unsigned x, unsigned y) { return _terrain->getStack(x, y); }
-
 			unsigned gstackSize() { return _stack.size(); }
 
 			std::vector<Interval>& getGStack() { return _stack; };
@@ -176,11 +152,7 @@ class QuadStack {
 
 			unsigned getMinLevel();
 
-			unsigned numberOfStacks();
-
 			bool noCompression() { return _bb.max.x - _bb.min.x < 1 || _bb.max.y - _bb.min.y < 1; }
-
-			void setCompressed(bool compressed) { _compressed = compressed; }
 
 			unsigned getLevel() { return _level; }
 
@@ -202,11 +174,9 @@ class QuadStack {
 			Traverse the tree in order to update the terrain pointer
 			*/
 			void updateTerrain(ShortSBR *terrain);
-
-
+			
 			void rearrangeHeightFields(std::vector<std::pair<Interval*, ivec2>> intervals, int& index);
-
-
+			
 			/**
 			Auxiliar method for printing the tree structure
 			*/
@@ -238,6 +208,10 @@ class QuadStack {
 
 	public:
 
+		/*
+		Auxiliary class to iterate in a level order
+		*/
+
 		class Iterator {
 			Node *_node;
 			std::list<Node*> _list;
@@ -253,10 +227,6 @@ class QuadStack {
 		QuadStack(ShortSBR *terrain);
 
 		void classify();
-
-		static void introduceStack(vector<int>& lut, vector<int>& input);
-
-		unsigned numberOfStacks();
 
 		std::string print();
 
@@ -277,16 +247,6 @@ class QuadStack {
 		unsigned getHfCols() { return _terrain->getDimension().y; }
 
 		Iterator iterator() { return Iterator(_root); }
-
-		float getOriginX() const { return _terrain->getOriginX(); }
-
-		float getOriginY() const { return _terrain->getOriginY(); }
-
-		float getResolution() const { return _terrain->getResolution(); }
-
-		float getBoundX() const { return _terrain->getBoundX(); }
-
-		float getBoundY() const { return _terrain->getBoundY(); }
 
 		float getMinHeight() const { return _terrain->getMinHeight(); }
 
