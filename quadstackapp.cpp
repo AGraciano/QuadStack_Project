@@ -12,7 +12,6 @@ QuadStackApp::QuadStackApp(QWidget *parent)
 	_glWindow.reset(new SceneWindow(statusBar(), dynamic_cast<QWindow*>(this)));
 	_glWindow->setAnimating(true);
 	
-
 	QWidget *container = QWidget::createWindowContainer(_glWindow.get());
 	container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 	setCentralWidget(container);

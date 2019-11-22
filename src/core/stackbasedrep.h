@@ -40,6 +40,8 @@ class StackBasedRep {
 
 		std::string _attributeName; /** < Label for attribute denomination */
 
+		float _heightResolution; /** < Minimal height difference */
+
 		const Stack<T>& getStack(unsigned int col, unsigned int row) const;
 
 		/**
@@ -61,7 +63,7 @@ class StackBasedRep {
 		*/
 		StackBasedRep(StackBasedRep<T>&& other);
 
-		StackBasedRep(float minHeight, float maxHeight, std::string attribute, vec2 origin, vec2 spacing, ivec2 dimension);
+		StackBasedRep(float minHeight, float maxHeight, float heightResolution, std::string attribute, vec2 origin, vec2 spacing, ivec2 dimension);
 
 		StackBasedRep(vec2 origin, vec2 spacing, ivec2 dimension);
 
@@ -89,6 +91,8 @@ class StackBasedRep {
 		float getBoundY() const { return _origin.y + _spacing.y * _dimension.y; }
 
 		float getResolution() const { return _spacing.x; }
+		
+		float getHeightResolution() const { return _heightResolution; }
 
 		std::string getAttributeName() const { return _attributeName; }
 
@@ -157,19 +161,21 @@ _spacing(other._spacing),
 _dimension(other._dimension),
 _minHeight(other._minHeight),
 _maxHeight(other._maxHeight),
+_heightResolution(other._heightResolution),
 _attributeName(move(other._attributeName)) {
 
 	other._stacks = nullptr;
 }
 
 template<class T>
-StackBasedRep<T>::StackBasedRep(float minHeight, float maxHeight, std::string attribute, vec2 origin, vec2 spacing, ivec2 dimension)
+StackBasedRep<T>::StackBasedRep(float minHeight, float maxHeight, float heightResolution, std::string attribute, vec2 origin, vec2 spacing, ivec2 dimension)
 : _origin(origin),
 _spacing(spacing),
 _dimension(dimension),
 _minHeight(minHeight),
 _maxHeight(maxHeight),
 _attributeName(attribute),
+_heightResolution(heightResolution),
 _stacks(new Stack<T>[dimension.x * dimension.y]) {
 }
 
@@ -190,6 +196,7 @@ _dimension(vm.getDimensionX(), vm.getDimensionY()),
 _minHeight(vm.getMinHeight()),
 _maxHeight(vm.getMaxHeight()),
 _attributeName(vm.getAttributeName()),
+_heightResolution(vm.getSpacingZ()),
 _stacks(new Stack<T>[vm.getDimensionX() * vm.getDimensionY()]) {
 
 	const T *data = vm.getData();
@@ -230,6 +237,7 @@ StackBasedRep<T>& StackBasedRep<T>::operator=(StackBasedRep<T>&& other) {
 	_minHeight = other._minHeight;
 	_maxHeight = other._maxHeight;
 	_attributeName = move(other._attributeName);
+	_heightResolution = other._heightResolution;
 
 	return *this;
 }
@@ -337,5 +345,6 @@ std::ostream& operator<<(std::ostream& os, StackBasedRep<T> &sbr) {
 
 using IntSBR = StackBasedRep<int>;
 using ShortSBR = StackBasedRep<short>;
+using ByteSBR = StackBasedRep<char>;
 
 #endif

@@ -1,6 +1,7 @@
 #include "heightmipmap.h"
 #include <algorithm>
 #include <iostream>
+#include <chrono>
 
 using glm::ivec2;
 
@@ -28,18 +29,27 @@ void HeightMipmap::computeMipmap() {
 		_mipmap.push_back(mp);
 
 		for (int x = 0; x < std::max(1, dimension.x >> l); ++x) {
+			//std::cout << "x:" << x << "/" << std::max(1, dimension.x >> l) << std::endl;
 			float x0 = x << 1;
 			float x1 = std::min(x0 + 1, (float)std::max(1, dimension.x >> (l - 1)) - 1);
 
 			for (int y = 0; y < std::max(1, dimension.y >> l); ++y) {
+				//std::cout << "y:" << y << "/" << std::max(1, dimension.y >> l) << std::endl;
+				
 				float y0 = y << 1;
 				float y1 = std::min(y0 + 1, (float)std::max(1, dimension.y >> (l - 1)) - 1);
 
 
-				float mip1 = _mipmap[l - 1]->getVectorOfData()[(int)x1 + (int)y0 * (dimension.x >> (l - 1))];
-				float mip2 = _mipmap[l - 1]->getVectorOfData()[(int)x1 + (int)y1 * (dimension.x >> (l - 1))];
-				float mip3 = _mipmap[l - 1]->getVectorOfData()[(int)x0 + (int)y0 * (dimension.x >> (l - 1))];
-				float mip4 = _mipmap[l - 1]->getVectorOfData()[(int)x0 + (int)y1 * (dimension.x >> (l - 1))];
+				//float mip1 = _mipmap[l - 1]->getVectorOfData()[(int)x1 + (int)y0 * (dimension.x >> (l - 1))];
+				//float mip2 = _mipmap[l - 1]->getVectorOfData()[(int)x1 + (int)y1 * (dimension.x >> (l - 1))];
+				//float mip3 = _mipmap[l - 1]->getVectorOfData()[(int)x0 + (int)y0 * (dimension.x >> (l - 1))];
+				//float mip4 = _mipmap[l - 1]->getVectorOfData()[(int)x0 + (int)y1 * (dimension.x >> (l - 1))];
+				
+				float mip1 = _mipmap[l - 1]->getBuffer()[(int)x1 + (int)y0 * (dimension.x >> (l - 1))];
+				float mip2 = _mipmap[l - 1]->getBuffer()[(int)x1 + (int)y1 * (dimension.x >> (l - 1))];
+				float mip3 = _mipmap[l - 1]->getBuffer()[(int)x0 + (int)y0 * (dimension.x >> (l - 1))];
+				float mip4 = _mipmap[l - 1]->getBuffer()[(int)x0 + (int)y1 * (dimension.x >> (l - 1))];
+
 				float finalMip;
 				if (_mode == MipmapMode::MAX) {
 					finalMip = std::numeric_limits<float>::min();
@@ -79,7 +89,6 @@ void HeightMipmap::computeMipmap() {
 			}
 
 		}
-
 	}
 
 }

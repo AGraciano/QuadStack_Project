@@ -31,6 +31,14 @@ QuadStack* SceneWindow::initModel() {
 	std::cout << "Reading..." << std::endl;
 	ShortVM *vm = reader.open("data/sample_terrain.vtk");
 
+	unsigned nRows = vm->getDimensionX();
+	unsigned nCols = vm->getDimensionY();
+
+	if (nRows & (nRows - 1) != 0 || nCols & (nCols - 1) != 0) {
+		std::cout << "Dataset with a non power-of-two columns or rows." << std::endl;
+		exit(1);
+	}
+
 	std::cout << "Octree construction..." << std::endl;
 	auto start = std::chrono::high_resolution_clock::now();
 	ShortOctree *octree = new ShortOctree(vm);
@@ -56,7 +64,8 @@ QuadStack* SceneWindow::initModel() {
 	_voxelBytes = vm->memorySize();
 	_sbrBytes = sbr->memorySize();
 	_octreeBytes = octree->memorySize();
-
+	//showStats();
+	//getchar();
 	delete vm;
 	delete octree;
 	return cm.getQuadStack();
@@ -88,7 +97,7 @@ void SceneWindow::initialize() {
 	
 	gl->glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	float aspect = static_cast<float>(WIN_WIDTH) / WIN_HEIGHT;
-	_camera.reset(new graphics::OrbitalCamera(3.14 / 5, 3.1416 / -2, -1.5, 0, 0, 45.0, aspect));
+	_camera.reset(new graphics::OrbitalCamera(3.14 / 5, 3.1416 / -2, -1.2, 0, 0, 45.0, aspect));
 
 	_frames = 0;
 	
@@ -100,6 +109,7 @@ void SceneWindow::initialize() {
 	
 	initVisualization(qs);
 	showStats();
+	//getchar();
 }
 
 void SceneWindow::showStats() {
@@ -109,6 +119,7 @@ void SceneWindow::showStats() {
 	std::cout << "Octree size: " << _octreeBytes / BYTES_TO_MBYTES << " MB" << std::endl;
 	std::cout << "SBR size: " << _sbrBytes / BYTES_TO_MBYTES << " MB" << std::endl;
 	std::cout << "QS attributes size: " << _qsBytes.x / BYTES_TO_MBYTES << " MB" << std::endl;
+	std::cout << "QS heightfields raw size: " << _qsBytes.w / BYTES_TO_MBYTES << " MB" << std::endl;
 	std::cout << "QS heightfields size: " << _qsBytes.y / BYTES_TO_MBYTES << " MB" << std::endl;
 	std::cout << "QS total size: " << (_qsBytes.x + _qsBytes.y) / BYTES_TO_MBYTES << " MB" << std::endl;
 	std::cout << "Mipmap size: " << (_qsBytes.z) / BYTES_TO_MBYTES << " MB" << std::endl;

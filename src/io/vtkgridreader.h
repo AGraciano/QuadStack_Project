@@ -105,8 +105,8 @@ namespace io {
 			//VoxelModel<T> *aux = new VoxelModel<T>(dimension, spacing, origin, attribute, data);
 
 
-			//ivec2 init = { 0, 256 };
-			//ivec2 newDim = { 256, 256 };
+			//ivec2 init = { 0, 0 };
+			//ivec2 newDim = { 1024, 512 };
 			//delete[] data;
 			//data = new T[newDim.x * newDim.y * zDimension];
 			//int cont = 0;
@@ -114,7 +114,7 @@ namespace io {
 			//	//for (int d = 0; d < 3; ++d) {
 			//		for (int i = init.x; i < init.x + newDim.x; ++i) {
 			//			for (int j = init.y; j < init.y + newDim.y; ++j) {
-			//				data[cont++] = aux->getData(j, i, k);
+			//				data[cont++] = aux->getData(i, j, k);
 			//			}
 			//		}
 			//	//}
@@ -166,5 +166,6 @@ namespace io {
 
 using IntVTKReader = io::VTKGridReader<int>;
 using ShortVTKReader = io::VTKGridReader<short>;
+using ByteVTKReader = io::VTKGridReader<char>;
 
 #endif

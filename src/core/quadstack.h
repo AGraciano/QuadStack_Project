@@ -266,7 +266,7 @@ class QuadStack {
 
 		void rearrangeHeightField();
 
-		void compressHeightField();
+		void compressHeightField(float resolution);
 
 		int treeHeight() { return _root->treeHeight(); }
 

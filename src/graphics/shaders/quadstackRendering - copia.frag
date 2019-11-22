@@ -39,10 +39,9 @@ layout(location = 4) in vec3 entryPoint;
 //layout(location = 5) in vec3 rayDir;
 
 // Some constants
-const int MAX_SAMPLES = 300;
+const int MAX_SAMPLES = 600;
 const float EPSILON = 0.0001;
 const float DELTA = 0.001; // for gradient calculation
-const float GAMMA = 0.005; // for gradient calculation
 const int UNKNOWN = -1;
 const int LOWEST = -2;
 const int NW = 0;
@@ -152,6 +151,14 @@ vec3 invDir = 1.0/geomDir;
 vec3 dirStep = geomDir * stepSize;
 int mipmap = 0;
 
+vec3 setUpDataPos(vec3 geomDir, out vec3 normal){
+
+	vec3 entry = entryPoint + geomDir * EPSILON;
+	float distanceEntry = distance(entry, cameraPosition);
+
+	return cameraPosition + geomDir * distanceEntry;
+}
+
 bool isEqual(float a, float b) {
 	return a <= b + EPSILON && a >= b - EPSILON; 
 }
@@ -180,55 +187,6 @@ bool inside(vec3 pos) {
 	return insideExclusive(pos, minBB, maxBB);
 }
 
-float rayBoxIntersect ( vec3 rpos, vec3 rdir, vec3 vmin, vec3 vmax ) {
-   float t[10];
-   t[1] = (vmin.x - rpos.x)/rdir.x;
-   t[2] = (vmax.x - rpos.x)/rdir.x;
-   t[3] = (vmin.y - rpos.y)/rdir.y;
-   t[4] = (vmax.y - rpos.y)/rdir.y;
-   t[5] = (vmin.z - rpos.z)/rdir.z;
-   t[6] = (vmax.z - rpos.z)/rdir.z;
-   t[7] = max(max(min(t[1], t[2]), min(t[3], t[4])), min(t[5], t[6]));
-   t[8] = min(min(max(t[1], t[2]), max(t[3], t[4])), max(t[5], t[6]));
-   t[9] = (t[8] < 0 || t[7] > t[8]) ? -1.0 : t[7];
-   return t[9];
-}
-
-int getEntryFace(vec3 point, vec3 bbmin, vec3 bbmax) {
-	int face = -1;
-
-	if (isEqual(point.x, bbmin.x))
-		face = 0;
-	else if (isEqual(point.x, bbmax.x))
-		face = 1;
-	else if (isEqual(point.y, bbmin.y))
-		face = 2;
-	else if (isEqual(point.y, bbmax.y))
-		face = 3;
-	else if (isEqual(point.z, bbmin.z))
-		face = 4;
-	else if (isEqual(point.z, bbmax.z))
-		face = 5;
-
-	return face;
-}
-
-vec3 setUpDataPos(vec3 geomDir, out vec3 normal){
-
-	vec3 entry = entryPoint + geomDir * DELTA;
-	float distanceEntry = distance(entry, cameraPosition);
-	
-	vec3 bb = vec3(DELTA, DELTA, DELTA);
-	vec3 occlusionMin = cameraPosition - bb;
-	vec3 occlusionMax = cameraPosition + bb;
-	float t = rayBoxIntersect(cameraPosition, geomDir, occlusionMin, occlusionMax);
-	vec3 occlusionPoint = cameraPosition + geomDir * -t;
-	int entryFace = getEntryFace(entryPoint, minBB, maxBB);
-	normal = normals[entryFace];
-
-	return cameraPosition + geomDir * distanceEntry;
-}
-
 vec4 transferFunction(uint index) {
 	return texelFetch(colors, int(index % numberColors), 0);
 }
@@ -248,7 +206,6 @@ ivec2 getTexelFromProjection(vec2 projection, float xOffset, float zOffset) {
 
 	return ivec2(coordX, coordY);
 }
-
 
 bool isRenderable(float value, out vec4 color) {
 	color =  transferFunction(int(value));
@@ -477,7 +434,6 @@ vec4 castRayInterval(vec3 position, vec4 bounds, float lowerBounds, float upperB
 
 	if (intersects)
 		position += geomDir * (tfar + DELTA);
-		//position += geomDir * (tfar + GAMMA);
 	else // For corners and edges
 		position += geomDir * DELTA;
 
@@ -544,36 +500,6 @@ void nextLevel(vec2 pos, ivec4 coords, vec4 bounds, out ivec4 outCoords, out vec
 
 }
 
-bvec3 isInNode(vec3 pos, vec4 nodeBounds, ivec3 lowerInterval, ivec3 upperInterval, LevelStack stack[MAX_LEVELS], out vec2 heights) {
-	bool r1 = true;
-	bool r2 = true;
-	bool r3 = true;
-
-	if (!inside(pos.xz, nodeBounds.xy, nodeBounds.zw))
-		r1 = false;
-
-	float lowerSampled = minBB.y;
-	if (lowerInterval.x != FIRST_LEVEL)
-		lowerSampled = sampleIntervalMax(stack, pos, lowerInterval, 0);
-	
-	heights.x = lowerSampled;
-
-	if (pos.y < lowerSampled)
-		r2 = false;
-
-	float upperSampled = maxBB.y;
-	if (upperInterval.x != FIRST_LEVEL)
-		upperSampled = sampleIntervalMin(stack, pos, upperInterval, 0);
-
-	heights.y = upperSampled;
-
-	if (pos.y > upperSampled)
-		r3 = false;
-
-	return bvec3(r1, r2, r3);	
-}
-
-
 bool isInNode(vec3 pos, vec4 nodeBounds, ivec3 lowerInterval, ivec3 upperInterval, LevelStack stack[MAX_LEVELS]) {
 	if (!inside(pos.xz, nodeBounds.xy, nodeBounds.zw))
 		return false;
@@ -587,7 +513,7 @@ bool isInNode(vec3 pos, vec4 nodeBounds, ivec3 lowerInterval, ivec3 upperInterva
 
 	float upperSampled = maxBB.y;
 	if (upperInterval.x != FIRST_LEVEL)
-		upperSampled = sampleIntervalMin(stack, pos, upperInterval, 0);
+		upperSampled = sampleIntervalMax(stack, pos, upperInterval, 0);
 
 	if (pos.y > upperSampled)
 		return false;
@@ -607,7 +533,6 @@ vec4 accumulateColor(vec4 colorIn, vec4 colorNew, float samplingDist) {
 }
 
 int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, uvec2 node, vec3 pos, int maxMipmap, vec4 accumColor, out ivec3 outLowerInterval, out ivec3 outUpperInterval, out vec3 outPos, out vec4 color, out int outCollisions) {
-	//vec4 nodeBounds = vec4(stack[stackIndex].minB - vec2(DELTA, DELTA), stack[stackIndex].maxB + vec2(DELTA, DELTA));
 	vec4 nodeBounds = vec4(stack[stackIndex].minB, stack[stackIndex].maxB);
 	ivec4 nodeCoords = ivec4(stack[stackIndex].minC, stack[stackIndex].maxC);
 	ivec3 lowerInterval = stack[stackIndex].lowerInterval; 
@@ -639,13 +564,12 @@ int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, 
 	ivec3 first = getInterval(firstInterval);
 	float firstSampling = sampleIntervalMax(stack, outPos, first, 0);
 
-	//ivec3 second = getInterval(firstInterval + 1);
-	//float secondSampling = sampleIntervalMax(stack, outPos, second, 0);
+	ivec3 second = getInterval(firstInterval + 1);
+	float secondSampling = sampleIntervalMax(stack, outPos, second, 0);
 
-	bool cent = false;
-	int cont = 0;
+
 	while(i < size) {
-		cont++;
+
 		outCollisions++;
 		
 		// 1. Begin with the static sampling
@@ -661,7 +585,7 @@ int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, 
 		// 2.1 If "normal value", return it
 		// 2.2 If wildcard, return CHILD
 		// 2.3 If empty space, continue the inspection
-		vec3 lastPos = outPos;
+
 		if (outPos.y <= mipSampling) {
 			vec4 newColor;
 			bool isChild = int(interval[VALUE]) == UNKNOWN;
@@ -687,39 +611,29 @@ int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, 
 				lastHeight = minBB.y;
 			else
 				lastHeight = sampleIntervalMax(stack, outPos, outLowerInterval, mipmap);
-			
-			float nextHeight = sampleIntervalMin(stack, outPos, interval, mipmap);
-			
+				
+			float nextHeight = maxBB.y;
+
 			vec4 bounds = getQuadrant(coords, nodeCoords.xy, nodeCoords.zw, nodeBounds.xy, nodeBounds.zw, mipmap);
-
-
-			int lasti = i;
 			if (outPos.y >= lastHeight && outPos.y <= nextHeight) {
-				cent = true;
 				vec4 newPos = castRayInterval(outPos, bounds, lastHeight, nextHeight);
 				outPos = newPos.xyz;
 				fatherUpper = sampleIntervalMax(stack, outPos, upperInterval, 0);
 				coords = getCoordsNoBounds(outPos);
 
 			} else {
-
 				if (mipmap == minimumMipmap) {
-					if (outPos.y < lastHeight)
-						i--;
-					else
-						i++;
-
+					i = 0;
 					outLowerInterval = lowerInterval;
 					mipmap = maxMipmap;
 				} else {
 					mipmap = max(mipmap - 1, minimumMipmap);
 				}
-			}	
-
-			int a = 0;
+			}
+							
 			if (!isInNode(outPos, nodeBounds, lowerInterval, upperInterval, stack))
 				return OUT;
-
+			
 
 		} else {
 			i++;
@@ -762,7 +676,6 @@ vec4 traverseQuadStack(vec3 position, out vec3 outPosition) {
 
 	bool cent = false;
 	int cont = 0;
-
 	for(int i=0; i < MAX_SAMPLES; ++i) {
 		cont++;
 		collisions++;
@@ -774,14 +687,12 @@ vec4 traverseQuadStack(vec3 position, out vec3 outPosition) {
 		int state = evaluateNode(collisions, sl, stackIndex, node.xy, outPosition, max(maxMipmap - stackIndex, 0), color, outLower, outUpper, outPosition, color, collisions);
 		//int state = evaluateNode(collisions, sl, stackIndex, node.xy, outPosition, 0, color, outLower, outUpper, outPosition, color, collisions);
 
-		if (!inside(outPosition) || (state == EVALUATED && color.a >= 0.9) || state == DEBUG) {
+		if (!inside(outPosition) || (state == EVALUATED && color.a >= 0.9) || state == DEBUG ) {
 			//return vec4(0.0, 1.0, 0.0, float(collisions) / 100);
 			return color;
 		}
 		
 		if (state == OUT) {
-
-			
 			bool ins;
 			do {
 				stackIndex--;
@@ -792,7 +703,6 @@ vec4 traverseQuadStack(vec3 position, out vec3 outPosition) {
 			} while(stackIndex > 0 && !ins);
 			continue;
 		} 
-
 
 		// Calculate coordinates
 		ivec4 currentCoords = ivec4(sl[stackIndex].minC, sl[stackIndex].maxC);
@@ -814,10 +724,8 @@ vec4 traverseQuadStack(vec3 position, out vec3 outPosition) {
 
 	}
 	
-	if (position == outPosition)
-		return RED;
 	// Debug enum. This part should never be reached
-	return BLUE;
+	return RED;
 }
 
 float getDepthValue(vec3 point) {

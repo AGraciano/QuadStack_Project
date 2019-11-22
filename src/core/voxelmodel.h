@@ -229,9 +229,9 @@ VoxelModel<T>::~VoxelModel() {
 
 template<class T>
 unsigned VoxelModel<T>::index1D(unsigned x, unsigned y, unsigned z, unsigned dimensionX, unsigned dimensionY, unsigned dimensionZ) {
-	auto index = (z * dimensionX * dimensionY) + (y * dimensionX) + x;
-	//auto index = y + dimensionY * (x + dimensionX * z);
-	//auto index = x + dimensionY * (y + dimensionZ * z);
+	auto index = (z * dimensionX * dimensionY) + (y * dimensionX) + x; //0
+	//auto index = y + dimensionY * (x + dimensionX * z); //1
+	//auto index = x + dimensionY * (y + dimensionZ * z); //2
 	auto nData = dimensionX * dimensionY * dimensionZ;
 
 	if (index >= nData)
@@ -242,6 +242,7 @@ unsigned VoxelModel<T>::index1D(unsigned x, unsigned y, unsigned z, unsigned dim
 
 using IntVM = VoxelModel<int>;
 using ShortVM = VoxelModel<short>;
+using ByteVM = VoxelModel<char>;
 
 
 #endif

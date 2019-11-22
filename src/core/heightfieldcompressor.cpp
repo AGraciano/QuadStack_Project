@@ -338,18 +338,11 @@ int HeightFieldCompressor::extractBits(int value, int firstBit, int nBits) {
 
 double HeightFieldCompressor::memorySize() const {
 	double memory = 0;
-	memory += _data.size() * 4;
+	memory += _data.size() * sizeof(int);
 	memory += _bits.size() * 5 / 8;
-	memory += _pointers.size() * 4;
-	memory += _baseValues.size() * 4;
+	memory += _pointers.size() * sizeof(int);
+	memory += _baseValues.size() * sizeof(short);
 
-	//std::cout << _HeightField->getDimensionX() << " x " << _HeightField->getDimensionY() << ", " << memory << std::endl;
-	//std::cout << _data.size() << ", " << _pointers.size() << ", " << _baseValues.size()<< ", " << _bits.size() << std::endl;
-
-	//for (int i = 0; i < _pointers.size(); ++i)
-	//	std::cout << _bits[i] << " ";
-	//std::cout << std::endl;
-	//getchar();
 	return memory;
 }
 

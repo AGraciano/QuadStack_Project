@@ -709,7 +709,7 @@ bool QuadStack::Iterator::next() {
 
 QuadStack::QuadStack(ShortSBR *terrain) :
 _terrain(terrain),
-_resolution(0),
+_resolution(terrain->getHeightResolution()),
 _root(new QuadStack::Node(0, ivec2(0, 0), ivec2(terrain->getDimension().x, terrain->getDimension().y), terrain)) {
 
 	unsigned maxDimension = std::max(_terrain->getDimension().x, _terrain->getDimension().y);
@@ -743,17 +743,16 @@ vec4 QuadStack::memorySize() const {
 }
 
 
-void QuadStack::compressHeightField() {
-	float resolution = getHeightResolution();
-	
+void QuadStack::compressHeightField(float resolution) {
 	unsigned block = 8;
 	Iterator it = iterator();
 	do {
 		auto *node = it.data();
 		for (auto& interval : node->getGStack()) {
-			if (interval.isOwner() && !node->noCompression()) {
+			if (interval.isOwner() && !node->noCompression()) {				
 				auto hfPointer = interval.getHeightField();
 				HeightFieldCompressor *compressor = new HeightFieldCompressor(hfPointer, block, block, resolution);
+				
 				hfPointer->setCompressor(compressor);
 				compressor->compress();
 			}

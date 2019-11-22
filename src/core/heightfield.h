@@ -101,6 +101,8 @@ class HeightField {
 
 		vector<float> getVectorOfData() const { return vector<float>(_data, _data + (_dimension.x * _dimension.y)); }
 
+		float* getBuffer() { return _data; }
+
 		//@}
 
 		float getHeightResolution();

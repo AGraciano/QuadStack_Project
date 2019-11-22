@@ -20,6 +20,7 @@ Interface that encapsulate a graphic scene. The scene uses as windows toolkit Qt
 
 using glm::mat4;
 using glm::vec3;
+using glm::ivec4;
 
 using std::string;
 using std::vector;
@@ -103,7 +104,7 @@ protected:
 	int _voxelBytes;
 	int _octreeBytes;
 	int _sbrBytes;
-	ivec3 _qsBytes;
+	ivec4 _qsBytes;
 
 	QuadStack* initModel();
 	void initVisualization(QuadStack* qs);

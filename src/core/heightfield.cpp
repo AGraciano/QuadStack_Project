@@ -141,7 +141,7 @@ HeightField& HeightField::operator=(const HeightField& other) {
 }
 
 double HeightField::memorySize() const {
-	return (sizeof(float)* _dimension.x * _dimension.y);
+	return (sizeof(short)* _dimension.x * _dimension.y);
 }
 
 double HeightField::memorySizeCompressed() const {

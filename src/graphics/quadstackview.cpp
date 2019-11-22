@@ -16,6 +16,29 @@ using glm::ivec4;
 
 const string QuadStackView::SHADER_PATH = "src/graphics/shaders/";
 
+//const unsigned char QuadStackView::ColorTable[NUMBER_OF_COLORS][4] = {
+//	{ 0x9e, 0xca, 0xe1, 0xff },
+//	{ 0xff, 0xed, 0xa0, 0x00 },
+//	{ 0x54, 0xca, 0xb2, 0x00 },
+//	{ 0xd2, 0xd2, 0xd2, 0xff },
+//	{ 0xbe, 0xff, 0x0c, 0xff },
+//	{ 0xaa, 0xc4, 0xf2, 0xff },
+//	{ 0x6a, 0x8f, 0xc4, 0xff },
+//	{ 0xae, 0xe9, 0xf7, 0xff },
+//	{ 0x76, 0x3d, 0x01, 0x00 },
+//	{ 0xff, 0xfc, 0x89, 0xff },
+//	{ 0xf6, 0xf0, 0x34, 0xff },
+//	{ 0xaa, 0xaa, 0xaa, 0xff },
+//	{ 0x59, 0x38, 0x07, 0xff },
+//	{ 0x94, 0xf4, 0x91, 0xff },
+//	{ 0xf0, 0x94, 0x67, 0x00 },
+//	{ 0xd3, 0x7e, 0x53, 0xff },
+//	{ 0x79, 0x79, 0x79, 0xff },
+//	{ 0xaa, 0xae, 0x6e, 0xff }, 
+//	{ 0x35, 0x9b, 0xcb, 0xff },
+//	{ 0xe1, 0xd5, 0x37, 0xff }
+//};
+
 const unsigned char QuadStackView::ColorTable[NUMBER_OF_COLORS][4] = {
 	{ 0x9e, 0xca, 0xe1, 0xff },
 	{ 0xff, 0xed, 0xa0, 0xff },
@@ -52,7 +75,7 @@ void QuadStackView::setViewport(unsigned int width, unsigned int height) {
 	_shaderProgram->setUniform("viewportSize", vec2(_viewportWidth, _viewportHeight));
 }
 
-ivec3 QuadStackView::init() {
+ivec4 QuadStackView::init() {
 	vector<vec3> points;
 	vector<int> indices;
 
@@ -117,6 +140,7 @@ ivec3 QuadStackView::init() {
 	_shaderProgram->setUniform("colors", 0);
 	GLAccessible::checkForOpenGLError(__FILE__, __LINE__);
 
+
 	// Tree index
 	unsigned levels = _quadstack->getMaxLevels();
 	vector<uvec3> treeNodes;
@@ -158,11 +182,20 @@ ivec3 QuadStackView::init() {
 	int blockSizeY = 8;
 
 	float gpuSizeHf = 0;
+	float gpuSizeRawHf = 0;
+	float gpuSizeRawMM = 0;
 	float gpuSizeQs = 0;
 	float gpuSizeMM = 0;
+
+	float gpuSizeHf1 = 0;
+	float gpuSizeRawHf1 = 0;
+	float gpuSizeRawMM1 = 0;
+	float gpuSizeQs1 = 0;
+	float gpuSizeMM1 = 0;
+
 	auto start = std::chrono::system_clock::now();
 	int intervalCount = 0;
-	auto startMM = std::chrono::system_clock::now();
+
 	do {
 		auto node = it.data();
 		uvec3 treeNode{ 0, 0, 0 };
@@ -185,6 +218,8 @@ ivec3 QuadStackView::init() {
 			if (interval.isOwner() && !node->noCompression()) {
 				currentLevel = node->getLevel();
 
+				gpuSizeRawHf1 += interval.getHeightField()->memorySize();
+
 				HeightMipmap maxMipmap(interval.getHeightField(), MipmapMode::MAX);
 				HeightMipmap minMipmap(interval.getHeightField(), MipmapMode::MIN);
 
@@ -200,6 +235,8 @@ ivec3 QuadStackView::init() {
 				int mipmapLevels = std::floor(std::log2(std::max(realNRow, realNCol))) + 1;
 
 				int slice = hfPointer;
+
+				gpuSizeRawHf += sizeof(short)* nRow * nCol;
 
 				for (int mipIndex = 0; mipIndex < mipmapLevels; ++mipIndex) {
 					hfPointers[mipIndex].x = hfDataMax.size();
@@ -223,6 +260,14 @@ ivec3 QuadStackView::init() {
 					HeightFieldCompressor compressorMax(hfMax, blockMipmapY, blockMipmapX, resolution);
 					compressorMin.compress();
 					compressorMax.compress();
+
+					if (mipIndex > 0) {
+						gpuSizeMM1 += compressorMin.memorySize();
+						gpuSizeMM1 += compressorMax.memorySize();
+						gpuSizeMM1 += sizeof(int)* 2; // pointers
+					} else {
+						gpuSizeHf1 += compressorMax.memorySize();
+					}
 					
 					// Max mipmap
 					int nBlocks = compressorMax.blockSize();
@@ -242,11 +287,13 @@ ivec3 QuadStackView::init() {
 					hfDataMax.insert(hfDataMax.end(), vectorData.begin(), vectorData.end());
 
 					// We count the 0 max mipmap as original hf 
-					if (mipIndex == 0) {
+					if (mipIndex == 0)
 						gpuSizeHf += (nBlocks * 5 / 8) + (nBlocks + vectorData.size()) * sizeof(int);
-					}
+					else {
+						gpuSizeMM += (nBlocks * 5 / 8) + (nBlocks * 2 + vectorData.size()) * sizeof(int);
+						gpuSizeRawMM += (sizeof(short) * row * col) * 2;
 
-					gpuSizeMM += (nBlocks * 5 / 8) + (nBlocks * 2 + vectorData.size()) * sizeof(int);
+					}
 
 					int size = 4 - hfDataMax.size() % 4;
 					for (int i = 0; size != 4 && i < size; ++i)
@@ -295,6 +342,7 @@ ivec3 QuadStackView::init() {
 				levelIndex = indices.y;
 
 			}
+			gpuSizeQs1 += sizeof(short) / 2 + sizeof (int) + 4 / 8;
 			ivec3 intervalData{ interval.getMaterial(), index, levelIndex };
 			lutData.push_back(intervalData);
 		}
@@ -303,6 +351,8 @@ ivec3 QuadStackView::init() {
 			treeNode.z = pointerIndex;
 			pointerIndex += 4;
 		}
+
+		gpuSizeQs1 += 6 / 8 + sizeof(int)* 2;
 		treeNodes.push_back(treeNode);
 		nodesSize++;
 		
@@ -324,7 +374,7 @@ ivec3 QuadStackView::init() {
 	_gl->glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, hfDataMax.data(), GL_STATIC_DRAW);
 	_gl->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, heightfieldsMaxSSBO);
 	_gl->glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
+	
 	bufferSize = sizeof(int)* hfDataMin.size();
 	_gl->glBindBuffer(GL_SHADER_STORAGE_BUFFER, heightfieldsMinSSBO);
 	_gl->glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, hfDataMin.data(), GL_STATIC_DRAW);
@@ -336,8 +386,8 @@ ivec3 QuadStackView::init() {
 	_gl->glBindBuffer(GL_SHADER_STORAGE_BUFFER, lutSSBO);
 	_gl->glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, NULL, GL_STATIC_DRAW);
 	_gl->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, lutSSBO);
-	gpuSizeQs += (sizeof(int)+sizeof(short)) * lutData.size();
-
+	gpuSizeQs += (sizeof(int)+sizeof(byte)) * lutData.size();
+	
 	ivec4 *intervals = (ivec4 *)_gl->glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, bufferSize, bufMask);
 	for (int i = 0; i < lutData.size(); ++i) {
 		intervals[i].x = lutData[i].x;
@@ -368,6 +418,7 @@ ivec3 QuadStackView::init() {
 	_gl->glBindBuffer(GL_SHADER_STORAGE_BUFFER, pointersSSBO);
 	_gl->glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, mmPointers.data(), GL_STATIC_DRAW);
 	_gl->glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, pointersSSBO);
+	//gpuSizeMM1 += bufferSize;
 
 	_gl->glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	_gl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -423,7 +474,7 @@ ivec3 QuadStackView::init() {
 
 	GLAccessible::checkForOpenGLError(__FILE__, __LINE__);
 
-	return ivec3{ gpuSizeQs, gpuSizeHf, gpuSizeMM };
+	return ivec4{ gpuSizeQs1, gpuSizeHf1, gpuSizeMM1, gpuSizeRawHf };
 }
 
 void QuadStackView::getVertices(vector<vec3> &points, vector<int> &indices) {

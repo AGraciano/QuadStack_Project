@@ -9,6 +9,7 @@
 
 using std::vector;
 using glm::vec3;
+using glm::ivec4;
 
 
 class QuadStackView : public graphics::Renderable {
@@ -57,7 +58,7 @@ public:
 	};
 
 	void render() override;
-	ivec3 init();
+	ivec4 init();
 	void setViewport(unsigned int width, unsigned int height);
 	const vec3 getMinBB() { return _minBB; }
 	const vec3 getMaxBB() { return _maxBB; }

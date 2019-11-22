@@ -245,8 +245,8 @@ T Stack<T>::getAttribute(float height) {
 
 template<class T>
 double Stack<T>::memorySize() const {
-	return sizeof(Interval<T>) * _stack.size();
-	//return (sizeof(short)+sizeof(short) )* _stack.size();
+	//return sizeof(Interval<T>) * _stack.size();
+	return (1 + sizeof(float) )* _stack.size();
 }
 
 template<class T>

@@ -441,9 +441,9 @@ float Octree<T>::Node::memorySize() {
 		acum += _child7->memorySize();
 	} else {
 		if (hasRepresentative())
-			acum += sizeof(T);
+			acum += sizeof(T) / 2;
 		else 
-			acum += sizeof(T) * (_boundX - _initX) * (_boundY - _initY) * (_boundZ - _initZ);		
+			acum += sizeof(T) / 2 * (_boundX - _initX) * (_boundY - _initY) * (_boundZ - _initZ);		
 	}
 
 	return acum;
@@ -463,6 +463,7 @@ Octree<T>::Node::~Node() {
 
 using IntOctree = Octree<int>;
 using ShortOctree = Octree<short>;
+using ByteOctree = Octree<char>;
 
 #endif
 
