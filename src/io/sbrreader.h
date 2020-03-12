@@ -1,6 +1,12 @@
 #ifndef SBR_READER_H
 #define SBR_READER_H
 
+/**
+*	Implementation of the Reader interface to read objects from stack-based representation custom files
+*
+*	@author Alejandro Graciano
+*/
+
 #include <fstream>
 #include <string>
 #include <glm/glm.hpp>
@@ -11,11 +17,7 @@ using std::string;
 using glm::vec2;
 using glm::ivec2;
 
-/**
-Implementation of the Reader interface to read objects from stack-based representation custom files
 
-@author Alejandro Graciano
-*/
 namespace io {
 
 	template <class T>

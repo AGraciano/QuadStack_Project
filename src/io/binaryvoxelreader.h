@@ -1,3 +1,9 @@
+/**
+*	Implementation of the Reader interface to read objects voxel binary files
+*	
+*	@author Alejandro Graciano
+*/
+
 #ifndef BINARY_VOXEL_READER_H
 #define BINARY_VOXEL_READER_H
 
@@ -9,12 +15,6 @@
 using namespace std;
 using glm::vec3;
 using glm::ivec3;
-
-/**
-Implementation of the Reader interface to read objects voxel binary files
-
-@author Alejandro Graciano
-*/
 
 
 namespace io {

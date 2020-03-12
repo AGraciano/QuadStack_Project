@@ -1,3 +1,16 @@
+/**
+*	Class that encapsulates an Stack-Based Representation Terrain an its operations.
+*	It uses a template for the type of attribute in cell.
+*
+*	Data structure explained in:
+*	Benes, B., & Forsbach, R. (2001). Layered data representation for visual simulation of terrain erosion.
+*	In Proceedings Spring Conference on Computer Graphics. http://doi.org/10.1109/SCCG.2001.945341
+*
+*	@author Alejandro Graciano
+*
+*/
+
+
 #ifndef STACK_BASED_REP_H
 #define STACK_BASED_REP_H
 
@@ -7,17 +20,7 @@
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
-/**
-	Class that encapsulates an Stack-Based Representation Terrain an its operations.
-	It uses a template for the type of attribute in cell.
 
-	Data structure explained in:
-	Benes, B., & Forsbach, R. (2001). Layered data representation for visual simulation of terrain erosion.
-	In Proceedings Spring Conference on Computer Graphics. http://doi.org/10.1109/SCCG.2001.945341
-
-	@author Alejandro Graciano
-
-*/
 
 using glm::vec2;
 using glm::vec3;

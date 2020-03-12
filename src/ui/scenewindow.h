@@ -1,7 +1,12 @@
+/**
+*	Interface that encapsulates a graphic scene. The scene uses as windows toolkit Qt
+*
+*	@author Alejandro Graciano
+*/
+
 #ifndef SCENE_WINDOW_H
 #define SCENE_WINDOW_H
 
-//#include "core/layer.h"
 #include <QStatusBar>
 #include "openglwindow.h"
 #include "core/quadstack.h"
@@ -12,11 +17,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
 
-/**
-Interface that encapsulate a graphic scene. The scene uses as windows toolkit Qt
-
-@author Alejandro Graciano
-*/
 
 using glm::mat4;
 using glm::vec3;

@@ -39,7 +39,7 @@ layout(location = 4) in vec3 entryPoint;
 //layout(location = 5) in vec3 rayDir;
 
 // Some constants
-const int MAX_SAMPLES = 300;
+const int MAX_SAMPLES = 400;
 const float EPSILON = 0.0001;
 const float DELTA = 0.001; // for gradient calculation
 const float GAMMA = 0.005; // for gradient calculation
@@ -642,15 +642,11 @@ int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, 
 	//ivec3 second = getInterval(firstInterval + 1);
 	//float secondSampling = sampleIntervalMax(stack, outPos, second, 0);
 
-	bool cent = false;
-	int cont = 0;
 	while(i < size) {
-		cont++;
 		outCollisions++;
 		
 		// 1. Begin with the static sampling
 		ivec3 interval = getInterval(firstInterval + i);
-
 		float mipSampling = sampleIntervalMax(stack, outPos, interval, minimumMipmap);
 
 		if (fatherLower > lastSample && fatherLower < mipSampling && lowerInterval[VALUE] != FIRST_LEVEL)
@@ -693,9 +689,7 @@ int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, 
 			vec4 bounds = getQuadrant(coords, nodeCoords.xy, nodeCoords.zw, nodeBounds.xy, nodeBounds.zw, mipmap);
 
 
-			int lasti = i;
 			if (outPos.y >= lastHeight && outPos.y <= nextHeight) {
-				cent = true;
 				vec4 newPos = castRayInterval(outPos, bounds, lastHeight, nextHeight);
 				outPos = newPos.xyz;
 				fatherUpper = sampleIntervalMax(stack, outPos, upperInterval, 0);
@@ -716,7 +710,6 @@ int evaluateNode(int collisions, LevelStack stack[MAX_LEVELS], uint stackIndex, 
 				}
 			}	
 
-			int a = 0;
 			if (!isInNode(outPos, nodeBounds, lowerInterval, upperInterval, stack))
 				return OUT;
 
@@ -775,7 +768,6 @@ vec4 traverseQuadStack(vec3 position, out vec3 outPosition) {
 		//int state = evaluateNode(collisions, sl, stackIndex, node.xy, outPosition, 0, color, outLower, outUpper, outPosition, color, collisions);
 
 		if (!inside(outPosition) || (state == EVALUATED && color.a >= 0.9) || state == DEBUG) {
-			//return vec4(0.0, 1.0, 0.0, float(collisions) / 100);
 			return color;
 		}
 		
@@ -814,8 +806,6 @@ vec4 traverseQuadStack(vec3 position, out vec3 outPosition) {
 
 	}
 	
-	if (position == outPosition)
-		return RED;
 	// Debug enum. This part should never be reached
 	return BLUE;
 }

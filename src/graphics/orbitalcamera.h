@@ -1,3 +1,9 @@
+/**
+*	Simple camera that implements an Orbitalal behaviour. The target point will be (0,0,0).
+*
+*	@author Alejandro Graciano
+*/
+
 #ifndef ORBITAL_CAMERA_H
 #define ORBITAL_CAMERA_H
 
@@ -7,11 +13,6 @@ using glm::vec4;
 using glm::vec3;
 using glm::mat4;
 
-/**
-Simple camera that implements an Orbitalal behaviour. The target point will be (0,0,0).
-
-@Author Alejandro Graciano
-*/
 
 namespace graphics {
 	class OrbitalCamera {

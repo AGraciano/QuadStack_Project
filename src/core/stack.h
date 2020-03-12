@@ -1,3 +1,10 @@
+/**
+*	Class that encapsulates a cell of the Stack-based terrain.
+*	It uses a template for the type of attribute in cell.
+*
+*	@author Alejandro Graciano
+*/
+
 #ifndef STACK_H
 #define STACK_H
 
@@ -14,13 +21,6 @@ struct Interval {
 	T _attribute; /**< Attribute contained in the stack */
 
 };
-
-/**
-	Class that encapsulates a cell of the Stack-based terrain.
-	It uses a template for the type of attribute in cell.
-
-	@author Alejandro Graciano
-*/
 
 template<class T>
 class Stack {
@@ -198,16 +198,6 @@ Stack<T>& Stack<T>::operator=(Stack<T>&& other) {
 
 	return *this;
 }
-
-//template<class T>
-//void Stack<T>::addInterval(T material, float currentHeight) {
-//	if (!_stack.empty() && _stack.back()->_attribute == material) {
-//		_stack.back()->_accumulatedHeight = currentHeight;
-//	} else {
-//		Interval<T> newInterval = { currentHeight, material };
-//		_stack.push_back(newInterval);
-//	}
-//}
 
 template<class T>
 void Stack<T>::addInterval(T material, float currentHeight) {

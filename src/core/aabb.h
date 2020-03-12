@@ -1,3 +1,9 @@
+/**
+*	Simple class that represents an Axis Aligned Bounding Box
+*
+*	@author Alejandro Graciano
+*/
+
 #ifndef AABB_H
 #define AABB_H
 
@@ -8,12 +14,6 @@ using glm::vec3;
 using glm::ivec2;
 using glm::vec2;
 
-
-/**
-Simple class that represents an Axis Aligned Bounding Box
-
-@author Alejandro Graciano
-*/
 
 template<class T>
 class AABB {

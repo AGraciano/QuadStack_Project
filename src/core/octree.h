@@ -1,14 +1,15 @@
+/**
+*	Class that encapsulate an octree representation for compress a voxel model
+*
+*	@author Alejandro Graciano
+*/
+
 #ifndef OCTREE_VOXEL_MODEL_H
 #define OCTREE_VOXEL_MODEL_H
 
 #include <memory.h>
 #include "voxelmodel.h"
 
-/**
-Class that encapsulate an octree representation for compress a voxel model
-
-@author Alejandro Graciano
-*/
 
 template<class T>
 class Octree {

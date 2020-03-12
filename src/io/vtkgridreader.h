@@ -1,3 +1,9 @@
+/**
+*	Implementation of the Reader interface to read objects from VTK files
+*
+*	@author Alejandro Graciano
+*/
+
 #ifndef VTK_GRID_READER_H
 #define VTK_GRID_READER_H
 
@@ -9,12 +15,6 @@
 
 using namespace std;
 using glm::vec3;
-
-/**
-Implementation of the Reader interface to read objects from VTK files
-
-@author Alejandro Graciano
-*/
 
 
 namespace io {
@@ -101,54 +101,6 @@ namespace io {
 			ivec3 dimension{ xDimension, yDimension, zDimension };
 
 			vm = new VoxelModel<T>(dimension, spacing, origin, attribute, data);
-
-			//VoxelModel<T> *aux = new VoxelModel<T>(dimension, spacing, origin, attribute, data);
-
-
-			//ivec2 init = { 0, 0 };
-			//ivec2 newDim = { 1024, 512 };
-			//delete[] data;
-			//data = new T[newDim.x * newDim.y * zDimension];
-			//int cont = 0;
-			//for (int k = 0; k < zDimension; ++k) {
-			//	//for (int d = 0; d < 3; ++d) {
-			//		for (int i = init.x; i < init.x + newDim.x; ++i) {
-			//			for (int j = init.y; j < init.y + newDim.y; ++j) {
-			//				data[cont++] = aux->getData(i, j, k);
-			//			}
-			//		}
-			//	//}
-			//}
-
-			//dimension = ivec3{ newDim.x, newDim.y, zDimension };
-			//vm = new VoxelModel<T>(dimension, spacing, origin, attribute, data);
-
-
-
-
-
-			//inputStream.close();
-
-
-			//std::ofstream os;
-
-			//os.open("data/terrain.vtk");
-			//auto nData = newDim.x * newDim.y * zDimension;
-			//os << "# vtk DataFile Version 3.0\n";
-			//os << "dataset" << endl;
-			//os << "ASCII" << endl;
-			//os << "DATASET STRUCTURED_POINTS\n";
-			//os << "DIMENSIONS " << newDim.x + 1 << " " << newDim.y + 1 << " " << zDimension + 1 << endl;
-			//os << "SPACING " << spacing.x << " " << spacing.y << " " << spacing.z << endl;
-			//os << "ORIGIN " << origin.x << " " << origin.y << " " << origin.z << endl;
-			//os << "CELL_DATA" << " " << nData << endl;
-			//os << "SCALARS " << attribute << " " << typeid(data[0]).name() << endl;
-			//os << "LOOKUP_TABLE default" << endl;
-
-			//for (auto i = 0; i < nData; ++i)
-			//	os << data[i] << " ";
-			//os << endl;
-			//os.close();
 
 		} catch (ifstream::failure &e) {
 			cerr << "Exception reading file\n" << e.what();

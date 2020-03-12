@@ -1,3 +1,9 @@
+/**
+*	Class that encapsulates a heightfield.
+*
+*	@author Alejandro Graciano
+*/
+
 #ifndef HEIGHT_FIELD_H
 #define HEIGHT_FIELD_H
 
@@ -5,11 +11,6 @@
 #include "core/aabb.h"
 #include <vector>
 
-/**
-Class that encapsulates a heightfield.
-
-@author Alejandro Graciano
-*/
 
 using std::vector;
 using glm::vec2;
