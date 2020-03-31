@@ -1,6 +1,7 @@
 /**
 *	Class that encapsulates a heightfield.
-*
+*	
+*	@class HeightField
 *	@author Alejandro Graciano
 */
 

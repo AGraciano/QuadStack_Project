@@ -1,3 +1,10 @@
+/**
+*	Class that computes min/max mipmap given a heightfield
+*
+*	@class HeightMipMap
+*	@author Alejandro Graciano
+*/
+
 #ifndef HEIGHT_MIP_MAP_H
 #define HEIGHT_MIP_MAP_H
 

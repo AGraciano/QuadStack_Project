@@ -1,3 +1,11 @@
+/**
+*	Class that computes a lossless random access compression algorithm based on
+*	block encoding for heightfields
+*
+*	@class HeightFieldCompressor
+*	@author Alejandro Graciano
+*/
+
 #ifndef HEIGHT_MAP_COMPRESSOR_H
 #define HEIGHT_MAP_COMPRESSOR_H
 
@@ -23,7 +31,10 @@ class HeightFieldCompressor {
 	unsigned _indexBits;
 	unsigned _blockSize;
 
-	int extractBits(int value, int firstBit, int nBits);
+	/**
+	* Method that extracts nBits of a buffer
+	*/
+	int extractBits(int buffer, int firstBit, int nBits);
 
 public:
 
@@ -34,22 +45,26 @@ public:
 		_offset(offset) {
 	};
 
+	/**
+	* Actual compression algorithm
+	*/
 	void compress();
-	void compressPow2();
+
+	//@{
+	/** Getter and setter methods */
 	std::vector<unsigned> getData() { return _data; }
 	unsigned getData(int index) { return _data[index]; }
 	int getBit(int index) { return _bits[index]; }
 	unsigned getPointers(int index) { return _pointers[index]; }
 	float getBaseValue(int index) { return _baseValues[index]; }
 	void setBaseValue(int index, float value) { _baseValues[index] = value; }
-
 	std::vector<int> getEncodingBits() { return _bits; }
 	std::vector<float> getBaseValues() { return _baseValues; }
 	std::vector<int> getPointer() { return _pointers; }
-
 	bool compressed() const { return _bits.size() > 0; }
 	unsigned blockSize() const { return _baseValues.size(); }
 	double memorySize() const;
+	//@}
 
 	~HeightFieldCompressor();
 };

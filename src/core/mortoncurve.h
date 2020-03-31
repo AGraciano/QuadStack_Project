@@ -1,3 +1,10 @@
+/**
+*	Class that encapsulates a Morton space-filling curve.
+*	Translated (col,row) into 1d index. It only works for 16 bit col and 15 bit row!
+* 
+*	@author Alejandro Graciano
+*/
+
 #ifndef MORTON_CURVE_H
 #define MORTON_CURVE_H
 
@@ -6,12 +13,6 @@
 
 using glm::ivec2;
 
-/**
-Class that encapsulate a Morton space-filling curve.
-Translated (col,row) into 1d index. It only works for 16 bit col and 15 bit row!
-
-@author Alejandro Graciano
-*/
 
 class MortonCurve {
 

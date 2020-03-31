@@ -1,11 +1,12 @@
-#ifndef SBR_READER_H
-#define SBR_READER_H
-
 /**
 *	Implementation of the Reader interface to read objects from stack-based representation custom files
 *
+*	@class SBReader
 *	@author Alejandro Graciano
 */
+
+#ifndef SBR_READER_H
+#define SBR_READER_H
 
 #include <fstream>
 #include <string>

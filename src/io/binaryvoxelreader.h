@@ -1,6 +1,7 @@
 /**
 *	Implementation of the Reader interface to read objects voxel binary files
 *	
+*	@class BinaryVoxelReader
 *	@author Alejandro Graciano
 */
 

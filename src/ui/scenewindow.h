@@ -19,6 +19,12 @@
 
 
 using glm::mat4;
+/**
+*	Main class for rendering the Graphics objects
+*
+*	@author Alejandro Graciano
+*/
+
 using glm::vec3;
 using glm::ivec4;
 

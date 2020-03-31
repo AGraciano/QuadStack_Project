@@ -1,3 +1,10 @@
+/*
+*	Abstract class that represents a renderable object.
+*
+*	@class Renderable
+*	@author Alejandro Graciano
+*/
+
 #ifndef RENDERABLE_H
 #define RENDERABLE_H
 

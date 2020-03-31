@@ -1,3 +1,10 @@
+/**
+*	The purpose of this class is to be used as base class for a window with a
+*	OpenGL support.
+*
+*	@author Alejandro Graciano
+*/
+
 #ifndef OPEN_GL_WINDOW_H
 #define OPEN_GL_WINDOW_H
 

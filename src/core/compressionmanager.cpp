@@ -23,12 +23,4 @@ void CompressionManager::execute() {
 	auto durationCH = std::chrono::duration_cast<std::chrono::milliseconds>(stopRH - startRH).count();
 	auto durationTotal = std::chrono::duration_cast<std::chrono::milliseconds>(stopRH - startTD).count();
 
-
-	//std::cout << "Total: " << durationTotal << " ms" << std::endl;
-	//std::cout << "Top down: " << float(durationTD) / durationTotal * 100.0 << "%" << std::endl;
-	//std::cout << "Bottom up: " << float(durationBU) / durationTotal * 100.0 << "%" << std::endl;
-	//std::cout << "Rearrangement: " << float(durationRH) / durationTotal * 100.0 << "%" << std::endl;
-	//std::cout << "Compression: " << float(durationCH) / durationTotal * 100.0 << "%" << std::endl;
-
-	//getchar();
 }

@@ -1,3 +1,11 @@
+/**
+*	Manager of compression procedure. It first geenrates de QuadStack hierarchy
+*	and then compresses every resulting heightfield
+*
+*	@class CompressionManager
+*	@author Alejandro Graciano
+*/
+
 #ifndef COMPRESSION_MANAGER_H
 #define COMPRESSION_MANAGER_H
 

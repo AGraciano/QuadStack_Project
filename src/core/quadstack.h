@@ -1,3 +1,10 @@
+/**
+*	Class that encapsulates a quadstack representation.
+*
+*	@author Alejandro Graciano
+*/
+
+
 #ifndef QUAD_STACK_H
 #define QUAD_STACK_H
 
@@ -8,14 +15,6 @@
 #include <memory>
 
 using glm::vec4;
-
-
-/**
-Class that encapsulates a quadstack representation.
-
-@author Alejandro Graciano
-*/
-
 
 class QuadStack {
 

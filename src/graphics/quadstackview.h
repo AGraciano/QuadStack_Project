@@ -1,3 +1,12 @@
+/*
+*	Concrete implementation of the Renderable abstract class to render
+*	a QuadStack representation.
+*
+*	@class QuadStackView
+*	@author Alejandro Graciano
+*/
+
+
 #ifndef QUADSTACK_COMP_VIEW_H
 #define QUADSTACK_COMP_VIEW_H
 
